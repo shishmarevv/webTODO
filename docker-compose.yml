@@ -8,6 +8,11 @@ services:
       - DATABASE_URI=postgresql://postgres:password@db:5432/tododb
     depends_on:
       - db
+    volumes:
+      - ./logs:/app/logs
+    #command: [ "./wait-for-it.sh", "db:5432", "-t", "60", "--", "python", "app.py" ]
+
+
   db:
     image: postgres:14
     restart: always
@@ -18,6 +23,17 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - db-data:/var/lib/postgresql/data
-volumes:
-  db-data:
+      - ./db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
